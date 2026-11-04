@@ -1,7 +1,8 @@
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 using RentACar.src.Api.Mapper;
 using RentACar.src.Core.Application.Service;
-using RentACar.src.Infrastructure.Persistence.Repository;
+using RentACar.src.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,11 +14,14 @@ builder.Services
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseInMemoryDatabase("RentACar");
+});
+
 builder.Services.AddControllers();
 
-builder.Services.AddSingleton<SucursalRepository>();
 builder.Services.AddScoped<SucursalService>();
-builder.Services.AddSingleton<VehiculoRepository>();
 builder.Services.AddScoped<VehiculoService>();
 
 builder.Services.AddScoped<SucursalMapper>();

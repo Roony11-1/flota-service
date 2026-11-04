@@ -25,4 +25,18 @@ public class VehiculoTurismo(
 {
     public int CapacidadPasajeros { get; private set; } = capacidadPasajeros;
     public int CapacidadMaleteroLitros { get; private set; } = capacidadMaleteroLitros;
+
+    private VehiculoTurismo() : this(
+        string.Empty,
+        string.Empty,
+        string.Empty,
+        0,
+        0,
+        false,
+        false,
+        0,
+        0,
+        default)
+    {
+    }
 }

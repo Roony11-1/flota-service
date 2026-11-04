@@ -27,4 +27,19 @@ public class VehiculoSedan(
     public int CapacidadPasajeros { get; private set; } = capacidadPasajeros;
     public int CantidadPuertas { get; private set; } = cantidadPuertas;
     public int CapacidadMaleteroLitros { get; private set; } = capacidadMaleteroLitros;
+
+    private VehiculoSedan() : this(
+        string.Empty,
+        string.Empty,
+        string.Empty,
+        0,
+        0,
+        false,
+        false,
+        0,
+        0,
+        0,
+        default)
+    {
+    }
 }

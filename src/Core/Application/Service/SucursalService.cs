@@ -1,53 +1,64 @@
+using Microsoft.EntityFrameworkCore;
 using RentACar.src.Core.Domain.Models;
-using RentACar.src.Infrastructure.Persistence.Repository;
+using RentACar.src.Infrastructure.Persistence;
 
 namespace RentACar.src.Core.Application.Service;
 
-public class SucursalService
+public class SucursalService(AppDbContext context)
 {
-    private readonly SucursalRepository _sucursalRepository;
-    private readonly VehiculoRepository _vehiculoRepository;
-
-    public SucursalService(SucursalRepository sucursalRepository, VehiculoRepository vehiculoRepository)
+    public async Task<Sucursal> Crear(Sucursal sucursal)
     {
-        _sucursalRepository = sucursalRepository;
-        _vehiculoRepository = vehiculoRepository;
+        if (await context.Sucursales.AnyAsync(s => s.Id == sucursal.Id))
+            throw new InvalidOperationException(
+                "Ya existe una sucursal con ese ID.");
+
+        if (await context.Sucursales.AnyAsync(s =>
+            s.Nombre.ToLower() == sucursal.Nombre.ToLower()))
+            throw new InvalidOperationException(
+                "Ya existe una sucursal con ese nombre.");
+
+        context.Sucursales.Add(sucursal);
+        await context.SaveChangesAsync();
+
+        return sucursal;
     }
 
-    public Sucursal Crear(Sucursal sucursal)
+    public async Task<Sucursal> AgregarVehiculos(
+        Guid sucursalId,
+        IEnumerable<Guid> vehiculosId)
     {
-        if (_sucursalRepository.FindById(sucursal.Id) is not null)
-            throw new InvalidOperationException("Ya existe una sucursal con ese ID.");
+        Sucursal sucursal = await context.Sucursales
+            .Include(s => s.Vehiculos)
+            .FirstOrDefaultAsync(s => s.Id == sucursalId)
+            ?? throw new KeyNotFoundException("Sucursal no encontrada.");
 
-        if (_sucursalRepository.ExistePorNombre(sucursal.Nombre))
-            throw new InvalidOperationException("Ya existe una sucursal con ese nombre.");
+        List<Vehiculo> vehiculos = await context.Vehiculos
+            .Where(v => vehiculosId.Contains(v.Id))
+            .ToListAsync();
 
-        return _sucursalRepository.Crear(sucursal);
-    }
-
-    public Sucursal AgregarVehiculos(Guid sucursalId, IEnumerable<Guid> vehiculosId)
-    {
-        Sucursal sucursal = _sucursalRepository.FindById(sucursalId)
-            ?? throw new KeyNotFoundException("Sucursal no encontrada");
-
-        List<Vehiculo> vehiculos = [];
-
-        foreach (Guid vehiculoId in vehiculosId)
-        {
-            Vehiculo vehiculo = _vehiculoRepository.FindById(vehiculoId)
-                ?? throw new KeyNotFoundException($"Vehiculo {vehiculoId} no encontrado");
-
-            vehiculos.Add(vehiculo);
-        }
+        if (vehiculos.Count != vehiculosId.Distinct().Count())
+            throw new KeyNotFoundException(
+                "Uno o más vehículos no fueron encontrados.");
 
         sucursal.AñadirVehiculos(vehiculos);
 
-        return _sucursalRepository.Actualizar(sucursal);
-    }
-    
+        await context.SaveChangesAsync();
 
-    public IReadOnlyList<Sucursal> FindAll()
+        return sucursal;
+    }
+
+    public async Task<IReadOnlyList<Sucursal>> FindAll()
     {
-        return _sucursalRepository.FindAll();
+        return await context.Sucursales
+            .Include(s => s.Vehiculos)
+            .ToListAsync();
+    }
+
+    public async Task<Sucursal> FindById(Guid sucursalId)
+    {
+        return await context.Sucursales
+            .Include(s => s.Vehiculos)
+            .FirstOrDefaultAsync(s => s.Id == sucursalId)
+            ?? throw new KeyNotFoundException("Sucursal no encontrada.");
     }
 }

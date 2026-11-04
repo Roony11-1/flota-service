@@ -24,6 +24,18 @@ public abstract class Vehiculo(
     public EstadoVehiculo Estado { get; private set; } = EstadoVehiculo.Disponible;
     public TipoCombustible TipoCombustible { get; private set; } = tipoCombustible;
 
+    protected Vehiculo() : this(
+        string.Empty,
+        string.Empty,
+        string.Empty,
+        0,
+        0,
+        false,
+        false,
+        default)
+    {
+    }
+
     /// <summary>
     /// Crea la relación con la sucursal.
     /// </summary>

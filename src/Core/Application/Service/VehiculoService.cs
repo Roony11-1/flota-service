@@ -1,52 +1,60 @@
+using Microsoft.EntityFrameworkCore;
 using RentACar.src.Core.Domain.Models;
-using RentACar.src.Infrastructure.Persistence.Repository;
+using RentACar.src.Infrastructure.Persistence;
 
 namespace RentACar.src.Core.Application.Service;
 
-public class VehiculoService
+public class VehiculoService(AppDbContext context)
 {
-    private readonly VehiculoRepository _vehiculoRepository;
-
-    public VehiculoService(VehiculoRepository vehiculoRepository)
+    public async Task<Vehiculo> Crear(Vehiculo vehiculo)
     {
-        _vehiculoRepository = vehiculoRepository;
+        if (await context.Vehiculos.AnyAsync(v => v.Id == vehiculo.Id))
+            throw new InvalidOperationException(
+                "Ya existe un vehículo con ese ID.");
+
+        if (await context.Vehiculos.AnyAsync(v =>
+            v.Patente == vehiculo.Patente))
+            throw new InvalidOperationException(
+                "Ya existe un vehículo con esa patente.");
+
+        context.Vehiculos.Add(vehiculo);
+        await context.SaveChangesAsync();
+
+        return vehiculo;
     }
 
-    public Vehiculo Crear(Vehiculo vehiculo)
+    public async Task<Vehiculo> Actualizar(Vehiculo vehiculo)
     {
-        if (_vehiculoRepository.FindById(vehiculo.Id) is not null)
-            throw new InvalidOperationException("Ya existe un vehículo con ese ID.");
-
-        if (_vehiculoRepository.ExistePorPatente(vehiculo.Patente))
-            throw new InvalidOperationException("Ya existe un vehículo con esa patente.");
-
-        return _vehiculoRepository.Crear(vehiculo);
-    }
-
-    public Vehiculo Actualizar(Vehiculo vehiculo)
-    {
-        var existente = _vehiculoRepository.FindById(vehiculo.Id)
+        var existente = await context.Vehiculos.FindAsync(vehiculo.Id)
             ?? throw new KeyNotFoundException("Vehículo no encontrado.");
 
-        if (_vehiculoRepository.ExistePorPatente(vehiculo.Patente, vehiculo.Id))
-            throw new InvalidOperationException("Ya existe otro vehículo con esa patente.");
+        if (await context.Vehiculos.AnyAsync(v =>
+            v.Patente == vehiculo.Patente && v.Id != vehiculo.Id))
+            throw new InvalidOperationException(
+                "Ya existe otro vehículo con esa patente.");
 
-        return _vehiculoRepository.Actualizar(vehiculo);
+        context.Entry(existente).CurrentValues.SetValues(vehiculo);
+
+        await context.SaveChangesAsync();
+
+        return existente;
     }
 
-    public Vehiculo ObtenerPorId(Guid id)
+    public async Task<Vehiculo> FindById(Guid id)
     {
-        return _vehiculoRepository.FindById(id)
+        return await context.Vehiculos.FindAsync(id)
             ?? throw new KeyNotFoundException("Vehículo no encontrado.");
     }
 
-    public IReadOnlyList<Vehiculo> FindAll()
+    public async Task<IReadOnlyList<Vehiculo>> FindAll()
     {
-        return _vehiculoRepository.FindAll();
+        return await context.Vehiculos.ToListAsync();
     }
 
-    public IReadOnlyList<Vehiculo> FindBySucursalId(Guid sucursalId)
+    public async Task<IReadOnlyList<Vehiculo>> FindBySucursalId(Guid sucursalId)
     {
-        return _vehiculoRepository.FindBySucursalId(sucursalId);
+        return await context.Vehiculos
+            .Where(v => v.SucursalId == sucursalId)
+            .ToListAsync();
     }
 }

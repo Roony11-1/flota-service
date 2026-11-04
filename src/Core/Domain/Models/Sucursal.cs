@@ -11,6 +11,11 @@ public class Sucursal
         CambiarNombre(nombre);
     }
 
+    private Sucursal()
+    {
+        
+    }
+
     /// <summary>
     /// Modifica el nombre de la sucursal.
     /// </summary>

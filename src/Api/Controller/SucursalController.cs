@@ -8,53 +8,57 @@ namespace RentACar.src.Api.Controller;
 
 [ApiController]
 [Route("api/v1/[controller]")]
-public class SucursalController : ControllerBase
+public class SucursalController(
+    SucursalService sucursalService,
+    SucursalMapper sucursalMapper) : ControllerBase
 {
-    private readonly SucursalService _sucursalService;
-    private readonly SucursalMapper _sucursalMapper;
-
-    public SucursalController(SucursalService sucursalService, SucursalMapper sucursalMapper)
-    {
-        _sucursalService = sucursalService;
-        _sucursalMapper = sucursalMapper;
-    }
-
     [HttpPost("crear")]
-    public IActionResult Crear([FromBody] SucursalRequest request)
+    public async Task<IActionResult> Crear(
+        [FromBody] SucursalRequest request)
     {
-        var sucursal = _sucursalMapper.FromRequest(request);
+        var sucursal = sucursalMapper.FromRequest(request);
 
-        var sucursalCreada = _sucursalService.Crear(sucursal);
+        var sucursalCreada = await sucursalService.Crear(sucursal);
 
-        var response = _sucursalMapper.ToResponse(sucursalCreada);
+        var response = sucursalMapper.ToResponse(sucursalCreada);
 
-        return CreatedAtAction(nameof(Crear), response);
+        return CreatedAtAction(
+            nameof(FindById),
+            new { id = sucursalCreada.Id },
+            response);
     }
 
     [HttpPost("{sucursalId:guid}/vehiculos")]
-    public IActionResult AñadirVehiculo(
+    public async Task<IActionResult> AñadirVehiculo(
         Guid sucursalId,
         [FromBody] IEnumerable<AsignarVehiculoRequest> vehiculosIds)
     {
-        Sucursal sucursal = _sucursalService.AgregarVehiculos(
+        Sucursal sucursal = await sucursalService.AgregarVehiculos(
             sucursalId,
-            vehiculosIds.Select(v => v.VehiculoId)
-        );
+            vehiculosIds.Select(v => v.VehiculoId));
 
-        var response = _sucursalMapper.ToResponse(sucursal);
+        var response = sucursalMapper.ToResponse(sucursal);
 
         return Ok(response);
     }
 
     [HttpGet]
-    public IActionResult FindAll()
+    public async Task<IActionResult> FindAll()
     {
-        var sucursales = _sucursalService.FindAll();
+        var sucursales = await sucursalService.FindAll();
 
         var response = sucursales
-            .Select(_sucursalMapper.ToResponse)
+            .Select(sucursalMapper.ToResponse)
             .ToList();
 
         return Ok(response);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> FindById(Guid id)
+    {
+        var sucursal = await sucursalService.FindById(id);
+
+        return Ok(sucursalMapper.ToResponse(sucursal));
     }
 }
