@@ -1,0 +1,80 @@
+@baseUrl = http://localhost:5105/api/v1/Sucursal
+@vehiculoBaseUrl = http://localhost:5105/api/v1/Vehiculo
+@contentType = application/json
+
+# Ejecuta las peticiones en orden.
+# Los datos se guardan en memoria: reinicia la API para empezar de cero.
+
+### 1) Crear un vehículo de apoyo para asignarlo a la sucursal
+# @name crearVehiculo
+POST {{vehiculoBaseUrl}}/crear
+Content-Type: {{contentType}}
+
+{
+  "$type": "sedan",
+  "patente": "FLOTA01",
+  "marca": "Kia",
+  "modelo": "Rio",
+  "año": 2025,
+  "consumoCombustible": 16.0,
+  "tieneAireAcondicionado": true,
+  "tieneTransmisionAutomatica": true,
+  "tipoCombustible": "Gasolina",
+  "capacidadPasajeros": 5,
+  "cantidadPuertas": 4,
+  "capacidadMaleteroLitros": 480
+}
+
+### 2) Crear la sucursal
+# @name crearSucursal
+POST {{baseUrl}}/crear
+Content-Type: {{contentType}}
+
+{
+  "nombre": "Sucursal Santiago"
+}
+
+### 3) Crear una segunda sucursal
+# @name crearSucursalValparaiso
+POST {{baseUrl}}/crear
+Content-Type: {{contentType}}
+
+{
+  "nombre": "Sucursal Valparaíso"
+}
+
+### 4) Listar todas las sucursales
+GET {{baseUrl}}
+Accept: application/json
+
+### 5) Asignar el vehículo a la sucursal creada
+POST {{baseUrl}}/{{crearSucursal.response.body.$.id}}/vehiculos
+Content-Type: {{contentType}}
+
+[
+  {
+    "vehiculoId": "{{crearVehiculo.response.body.$.id}}"
+  }
+]
+
+### 6) Listar sucursales y verificar que el vehículo quedó asignado
+GET {{baseUrl}}
+Accept: application/json
+
+### 7) Error esperado: nombre de sucursal duplicado
+# La API responde 500 porque la excepción no tiene manejador global.
+POST {{baseUrl}}/crear
+Content-Type: {{contentType}}
+
+{
+  "nombre": "Sucursal Santiago"
+}
+
+### 8) Error esperado: sucursal inexistente
+# La API responde 500 porque la excepción no tiene manejador global.
+POST {{baseUrl}}/00000000-0000-0000-0000-000000000000/vehiculos
+Content-Type: {{contentType}}
+
+{
+  "vehiculoId": "{{crearVehiculo.response.body.$.id}}"
+}

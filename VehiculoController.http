@@ -1,0 +1,83 @@
+@baseUrl = http://localhost:5105/api/v1/Vehiculo
+@contentType = application/json
+
+# Ejecuta las peticiones en orden.
+# Los datos se guardan en memoria: reinicia la API para empezar de cero.
+
+### 1) Crear un sedán
+# @name crearSedan
+POST {{baseUrl}}/crear
+Content-Type: {{contentType}}
+
+{
+  "$type": "sedan",
+  "patente": "ABCD12",
+  "marca": "Toyota",
+  "modelo": "Corolla",
+  "año": 2025,
+  "consumoCombustible": 15.5,
+  "tieneAireAcondicionado": true,
+  "tieneTransmisionAutomatica": true,
+  "tipoCombustible": "Gasolina",
+  "capacidadPasajeros": 5,
+  "cantidadPuertas": 4,
+  "capacidadMaleteroLitros": 470
+}
+
+### 2) Crear un turismo
+# @name crearTurismo
+POST {{baseUrl}}/crear
+Content-Type: {{contentType}}
+
+{
+  "$type": "turismo",
+  "patente": "EFGH34",
+  "marca": "Hyundai",
+  "modelo": "Grand i10",
+  "año": 2024,
+  "consumoCombustible": 18.2,
+  "tieneAireAcondicionado": true,
+  "tieneTransmisionAutomatica": false,
+  "tipoCombustible": "Hibrido",
+  "capacidadPasajeros": 5,
+  "capacidadMaleteroLitros": 260
+}
+
+### 3) Listar todos los vehículos
+GET {{baseUrl}}
+Accept: application/json
+
+### 4) Obtener el sedán recién creado por su ID
+GET {{baseUrl}}/{{crearSedan.response.body.$.id}}
+Accept: application/json
+
+### 5) Listar los vehículos de una sucursal
+# Copia el ID desde la respuesta de SucursalController.http
+@sucursalId = ecba7901-c0d2-4b33-acdf-4ce07fac1d17
+GET {{baseUrl}}/sucursal/{{sucursalId}}
+Accept: application/json
+
+### 6) Error esperado: patente duplicada
+# La API responde 500 porque la excepción no tiene manejador global.
+POST {{baseUrl}}/crear
+Content-Type: {{contentType}}
+
+{
+  "$type": "sedan",
+  "patente": "ABCD12",
+  "marca": "Toyota",
+  "modelo": "Corolla",
+  "año": 2025,
+  "consumoCombustible": 15.5,
+  "tieneAireAcondicionado": true,
+  "tieneTransmisionAutomatica": true,
+  "tipoCombustible": "Gasolina",
+  "capacidadPasajeros": 5,
+  "cantidadPuertas": 4,
+  "capacidadMaleteroLitros": 470
+}
+
+### 7) Error esperado: vehículo inexistente
+# La API responde 500 porque la excepción no tiene manejador global.
+GET {{baseUrl}}/00000000-0000-0000-0000-000000000000
+Accept: application/json
